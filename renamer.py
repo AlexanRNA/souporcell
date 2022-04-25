@@ -41,7 +41,7 @@ if args.chrom:
     bam = bam.fetch(args.chrom, int(args.start), int(args.end))
 
 recent_umis = {}
-with open(args.out,'w') as fastq:
+with open(args.out,'w') as fastq, open(args.out, 'w') as fastq2:
     for (index,read) in enumerate(bam):
         if not read.has_tag(CELL_TAG):
             continue
@@ -63,11 +63,35 @@ with open(args.out,'w') as fastq:
     
         readname = read.qname
         if read.has_tag(CELL_TAG) and read.get_tag(CELL_TAG) in cell_barcodes:
-            if args.no_umi:
-                fastq.write("@"+read.qname+";"+cell_barcode+"\n")
-            else:
-                fastq.write("@"+read.qname+";"+cell_barcode+";"+UMI+"\n")
-            fastq.write(read.seq+"\n")
-            fastq.write("+\n")
-            fastq.write(read.qual+"\n")
+            if read.is_paired:
+                if read.is_read1:
+                    if args.no_umi:
+                        fastq.write("@"+read.qname+";"+cell_barcode+"\n")
+                    else:
+                        fastq.write("@"+read.qname+";"+cell_barcode+";"+UMI+"\n")
+                    fastq.write(read.seq+"\n")
+                    fastq.write("+\n")
+                    fastq.write(read.qual+"\n")
+
+                elif read.is_read2:
+                    if args.no_umi:
+                        fastq2.write("@"+read.qname+";"+cell_barcode+"\n")
+                    else:
+                        fastq2.write("@"+read.qname+";"+cell_barcode+";"+UMI+"\n")
+                    fastq2.write(read.seq+"\n")
+                    fastq2.write("+\n")
+                    fastq2.write(read.qual+"\n")
+
+                else:
+                    continue
+
+
+            else:    
+                if args.no_umi:
+                    fastq.write("@"+read.qname+";"+cell_barcode+"\n")
+                else:
+                    fastq.write("@"+read.qname+";"+cell_barcode+";"+UMI+"\n")
+                fastq.write(read.seq+"\n")
+                fastq.write("+\n")
+                fastq.write(read.qual+"\n")    
 
