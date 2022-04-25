@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser(description='make fastq from possorted_genome_b
 parser.add_argument('-f', '--bam', required=True, help="cellranger bam")
 parser.add_argument('-b', '--barcodes', required=True, help="cellranger barcodes.tsv")
 parser.add_argument('-o', '--out', required=True, help="output fastq name")
+parser.add_argument('-o2', '--out2', required=False, help="output fastq name in PE")
 parser.add_argument('-c', '--chrom', required = False, help="chrom")
 parser.add_argument('-s', '--start', required = False, help="start")
 parser.add_argument('-e', '--end', required = False, help="end")
@@ -41,7 +42,7 @@ if args.chrom:
     bam = bam.fetch(args.chrom, int(args.start), int(args.end))
 
 recent_umis = {}
-with open(args.out,'w') as fastq, open(args.out, 'w') as fastq2:
+with open(args.out,'w') as fastq, open(args.out2, 'w') as fastq2:
     for (index,read) in enumerate(bam):
         if not read.has_tag(CELL_TAG):
             continue
