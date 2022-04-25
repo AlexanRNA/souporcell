@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(description='make fastq from possorted_genome_b
 parser.add_argument('-f', '--bam', required=True, help="cellranger bam")
 parser.add_argument('-b', '--barcodes', required=True, help="cellranger barcodes.tsv")
 parser.add_argument('-o', '--out', required=True, help="output fastq name")
-parser.add_argument('-o2', '--out2', required=False, help="output fastq name in PE")
+parser.add_argument('-o2', '--out2', required=False, default=False, help="output fastq name in PE")
 parser.add_argument('-c', '--chrom', required = False, help="chrom")
 parser.add_argument('-s', '--start', required = False, help="start")
 parser.add_argument('-e', '--end', required = False, help="end")
@@ -42,57 +42,92 @@ if args.chrom:
     bam = bam.fetch(args.chrom, int(args.start), int(args.end))
 
 recent_umis = {}
-with open(args.out,'w') as fastq, open(args.out2, 'w') as fastq2:
-    for (index,read) in enumerate(bam):
-        if not read.has_tag(CELL_TAG):
-            continue
-        cell_barcode = read.get_tag(CELL_TAG)
-        if read.is_secondary or read.is_supplementary:
-            continue
-        pos = read.pos
-        if args.no_umi:
-            full_umi = cell_barcode + str(pos)
-        else:
-            if not read.has_tag(UMI_TAG):
-                continue
-            UMI = read.get_tag(UMI_TAG)
-            full_umi = cell_barcode + UMI + str(pos)
-        if full_umi in recent_umis:
-            continue
-        if read.seq is None:
-            continue
+
+# check if out2 was set by user
+if args.out2 is not None:
+        with open(args.out,'w') as fastq, open(args.out2, 'w') as fastq2:
+            for (index,read) in enumerate(bam):
+                if not read.has_tag(CELL_TAG):
+                    continue
+                cell_barcode = read.get_tag(CELL_TAG)
+                if read.is_secondary or read.is_supplementary:
+                    continue
+                pos = read.pos
+                if args.no_umi:
+                    full_umi = cell_barcode + str(pos)
+                else:
+                    if not read.has_tag(UMI_TAG):
+                        continue
+                    UMI = read.get_tag(UMI_TAG)
+                    full_umi = cell_barcode + UMI + str(pos)
+                if full_umi in recent_umis:
+                    continue
+                if read.seq is None:
+                    continue
     
-        readname = read.qname
-        if read.has_tag(CELL_TAG) and read.get_tag(CELL_TAG) in cell_barcodes:
-            if read.is_paired:
-                if read.is_read1:
+            readname = read.qname
+            if read.has_tag(CELL_TAG) and read.get_tag(CELL_TAG) in cell_barcodes:
+                if read.is_paired:
+                    if read.is_read1:
+                        if args.no_umi:
+                            fastq.write("@"+read.qname+";"+cell_barcode+"\n")
+                        else:
+                            fastq.write("@"+read.qname+";"+cell_barcode+";"+UMI+"\n")
+                        fastq.write(read.seq+"\n")
+                        fastq.write("+\n")
+                        fastq.write(read.qual+"\n")
+
+                    elif read.is_read2:
+                        if args.no_umi:
+                            fastq2.write("@"+read.qname+";"+cell_barcode+"\n")
+                        else:
+                            fastq2.write("@"+read.qname+";"+cell_barcode+";"+UMI+"\n")
+                        fastq2.write(read.seq+"\n")
+                        fastq2.write("+\n")
+                        fastq2.write(read.qual+"\n")
+
+                    else:
+                        print("something is not right. Review your command")
+
+
+                else:  
+                    print("You provided seconf file name, but you data is not paired end. One output file will be written")
                     if args.no_umi:
                         fastq.write("@"+read.qname+";"+cell_barcode+"\n")
                     else:
                         fastq.write("@"+read.qname+";"+cell_barcode+";"+UMI+"\n")
                     fastq.write(read.seq+"\n")
                     fastq.write("+\n")
-                    fastq.write(read.qual+"\n")
-
-                elif read.is_read2:
-                    if args.no_umi:
-                        fastq2.write("@"+read.qname+";"+cell_barcode+"\n")
-                    else:
-                        fastq2.write("@"+read.qname+";"+cell_barcode+";"+UMI+"\n")
-                    fastq2.write(read.seq+"\n")
-                    fastq2.write("+\n")
-                    fastq2.write(read.qual+"\n")
-
-                else:
+                    fastq.write(read.qual+"\n") 
+                
+if args.out2 is None:
+    with open(args.out,'w') as fastq:
+        for (index,read) in enumerate(bam):
+            if not read.has_tag(CELL_TAG):
+                continue
+            cell_barcode = read.get_tag(CELL_TAG)
+            if read.is_secondary or read.is_supplementary:
+                continue
+            pos = read.pos
+            if args.no_umi:
+                full_umi = cell_barcode + str(pos)
+            else:
+                if not read.has_tag(UMI_TAG):
                     continue
-
-
-            else:    
+                UMI = read.get_tag(UMI_TAG)
+                full_umi = cell_barcode + UMI + str(pos)
+            if full_umi in recent_umis:
+                continue
+            if read.seq is None:
+                continue
+    
+            readname = read.qname
+            if read.has_tag(CELL_TAG) and read.get_tag(CELL_TAG) in cell_barcodes:
                 if args.no_umi:
                     fastq.write("@"+read.qname+";"+cell_barcode+"\n")
                 else:
                     fastq.write("@"+read.qname+";"+cell_barcode+";"+UMI+"\n")
                 fastq.write(read.seq+"\n")
                 fastq.write("+\n")
-                fastq.write(read.qual+"\n")    
+                fastq.write(read.qual+"\n")
 
