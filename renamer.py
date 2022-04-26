@@ -87,12 +87,14 @@ with open(filename1,'w') as fastq, open(filename2, 'w') as fastq2:
                     fastq2.write(read.qual+"\n")
 
                 else:
-                    if args.no_umi:
-                        fastq.write("@"+read.qname+";"+cell_barcode+"\n")
-                    else:
-                        fastq.write("@"+read.qname+";"+cell_barcode+";"+UMI+"\n")
-                    fastq.write(read.seq+"\n")
-                    fastq.write("+\n")
-                    fastq.write(read.qual+"\n")
+                    pass  # skip PE that do not have pair 
+            else:
+                if args.no_umi:
+                    fastq.write("@"+read.qname+";"+cell_barcode+"\n")
+                else:
+                    fastq.write("@"+read.qname+";"+cell_barcode+";"+UMI+"\n")
+                fastq.write(read.seq+"\n")
+                fastq.write("+\n")
+                fastq.write(read.qual+"\n")
 
                
