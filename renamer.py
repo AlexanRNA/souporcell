@@ -60,10 +60,10 @@ with open(filename1,'w') as fastq, open(filename2, 'w') as fastq2:
                 continue
             UMI = read.get_tag(UMI_TAG)
             full_umi = cell_barcode + UMI + str(pos)
-            if full_umi in recent_umis:
-                continue
-            if read.seq is None:
-                continue
+        if full_umi in recent_umis:
+            continue
+        if read.seq is None:
+            continue
     
         readname = read.qname
         if read.has_tag(CELL_TAG) and read.get_tag(CELL_TAG) in cell_barcodes:
