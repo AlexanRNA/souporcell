@@ -3,6 +3,9 @@
 import pysam
 import argparse
 import gzip
+import glob
+import os
+
 parser = argparse.ArgumentParser(description='make fastq from possorted_genome_bam.bam from cellranger')
 
 parser.add_argument('-f', '--bam', required=True, help="cellranger bam")
@@ -41,8 +44,8 @@ if args.chrom:
     bam = bam.fetch(args.chrom, int(args.start), int(args.end))
 
 recent_umis = {}
-filename1 = args.out + "_1"
-filename2 = args.out + "_2"
+filename1 = args.out + "_1.fq"
+filename2 = args.out + "_2.fq"
 
 
 with open(filename1,'w') as fastq, open(filename2, 'w') as fastq2:
@@ -97,4 +100,10 @@ with open(filename1,'w') as fastq, open(filename2, 'w') as fastq2:
                 fastq.write("+\n")
                 fastq.write(read.qual+"\n")
 
-               
+
+#remove empty 2.fq               
+fileList=glob.glob("*_2.fq")
+
+for filename in fileList:
+    if os.stat(filename).st_size==0:
+        os.remove(filename)
